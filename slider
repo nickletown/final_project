@@ -1,24 +1,41 @@
-fig = uifigure('Position',[480 478 398 271]);
-Slider = uicontrol('style','slide',...
-                  'unit','pix',...
-                  'position',[20 10 260 30],...
-                  'min',0,'max',250,'val',245,...
-                  'sliderstep',[1/255 5/255],...
-                  'callback', @slidercallback);
+% VARIABLES %
+%global volume;
+%global particles;
+%global temperature;
+%global r_constant;
+%global pressure;
+%global units;
+
+setGlobalVolume(1);
+setGlobalParticles(1);
+setGlobalTemperature(0);
+setGlobalRConstant(8.314);
+setGlobalPressure(0);
+setGlobalUnits(0);
 
 
-bg1 = uibuttongroup(fig,'Position',[137 113 123 85]);   
+fig = uifigure('Position',[480 478 310 271], 'Name', 'Pressure Solver');
+
+Slider = uislider(fig, 'Position', [20 140, 260, 0],...
+                  'ValueChangingFcn', @slidercallback);
+
+calculate_button = uibutton(fig, 'Text', "Calculate Pressure",... 
+                            'ButtonPushedFcn', @calculate_pressure,...
+                            'Position', [80 20 150 25]);
+
+
+bg1 = uibuttongroup(fig,'Position',[140 175 123 85], 'SelectionChangeFcn', @changeUnits);   
 
 rb1 = uiradiobutton(bg1,'Position',[10 60 91 15]);
 rb2 = uiradiobutton(bg1,'Position',[10 38 91 15]);
 rb3 = uiradiobutton(bg1,'Position',[10 16 91 15]);
 
-rb1.Text = 'Atmospheres';
-rb2.Text = 'Pascals';
+rb1.Text = 'Pascals';
+rb2.Text = 'Atmospheres';
 rb3.Text = 'Torr';
 
-fig = uifigure('position',[480 478 398 271]);
-bg2 = uibuttongroup(fig,'position',[137 113 123 85], 'SelectionChangedFcn', @toggle);
+%fig = uifigure('position',[480 478 398 271]);
+bg2 = uibuttongroup(fig,'position',[10 175 123 85], 'SelectionChangedFcn', @toggle);
 
 tb1 = uitogglebutton(bg2,'position', [10 50 100 22]);
 tb2 = uitogglebutton(bg2,'position', [10 28 100 22]);
@@ -28,32 +45,119 @@ tb2.Text = '10';
 
 tb1.Value = true;
 
+% Text Boxes %
+vLabel = uilabel(bg2, 'Text', 'Volume', 'Position', [40 -15 100 50]);
+uLabel = uilabel(bg1, 'Text', 'Units', 'Position', [48 -15 100 50]);
+tLabel = uilabel(fig, 'Text', 'Temperature', 'Position', [120 90 100 30]);
 
-volume = 0;
 
 
 
-function toggle(source,eventdata)
+function toggle(~,eventdata)
 if eventdata.NewValue.Text == '1'
-    volume = 1;
+    setGlobalVolume(1);
 else
-    volume = 10;
+    setGlobalVolume(10);
 end
 end
 
 
-  function slidercallback(h, event)
-    x = 8.314;
-    y = get(h, 'value');
-    (x*y) 
+  function slidercallback(h, ~)
+    %temperature = get(h, 'value');
+    setGlobalTemperature(get(h, 'value'));
   end
   
-function  changeUnits(rb1,rb2,rb3)
-          if rb1 value = true
-              P/101325 == x
-          
-          elseif rb2 value = true
-              P == x
+function  changeUnits(~, eventdata)
+    if strcmp(eventdata.NewValue.Text, 'Pascals')
+        setGlobalUnits(0);
+    elseif strcmp(eventdata.NewValue.Text, 'Atmospheres')
+        setGlobalUnits(1);
+    else
+        setGlobalUnits(2);
+    end
+end
 
-          end
+function calculate_pressure(~, ~)
+    %pressure = (particles*r_constant*temperature)/volume;
+    part = getGlobalParticles;
+    rc = getGlobalRConstant;
+    temp = getGlobalTemperature;
+    vol = getGlobalVolume;
+    pascalPressure = (part*rc*temp)/vol;
+    if getGlobalUnits == 0 % Pascal Units
+        setGlobalPressure(pascalPressure);
+        fprintf("Pressure: %d Pascal\n", getGlobalPressure);
+    elseif getGlobalUnits == 1 % Atmosphere Units
+        setGlobalPressure(pascalPressure/101325);
+        fprintf("Pressure: %d Atmospheres\n", getGlobalPressure);
+    else % Torr Units
+        setGlobalPressure(pascalPressure/133);
+        fprintf("Pressure: %d Torr\n", getGlobalPressure);
+    end
+end
+
+% SET GLOBAL VARS %
+
+function setGlobalVolume(value)
+    global volume;
+    volume = value;
+end
+
+function setGlobalParticles(value)
+    global particles;
+    particles = value;
+end
+
+function setGlobalTemperature(value)
+    global temperature;
+    temperature = value;
+end
+
+function setGlobalRConstant(value)
+    global r_constant;
+    r_constant = value;
+end
+
+function setGlobalPressure(value)
+    global pressure;
+    pressure = value;
+end
+
+function setGlobalUnits(value)
+    global units;
+    units = value;
+end
+
+
+
+
+% GET GLOBAL VARS %
+function v = getGlobalVolume
+    global volume;
+    v = volume;
+end
+
+function pa = getGlobalParticles
+    global particles;
+    pa = particles;
+end
+
+function t = getGlobalTemperature
+    global temperature;
+    t = temperature;
+end
+
+function rc = getGlobalRConstant
+    global r_constant;
+    rc = r_constant;
+end
+
+function pr = getGlobalPressure
+    global pressure;
+    pr = pressure;
+end
+
+function pr = getGlobalUnits
+    global units;
+    pr = units;
 end
